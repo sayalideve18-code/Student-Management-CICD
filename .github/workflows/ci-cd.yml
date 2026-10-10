@@ -29,8 +29,19 @@ jobs:
           python -m pip install -r requirements.txt
           python -m unittest -v
 
+      
       - name: Deploy application
         run: |
           docker run -d --name student-app -p 8080:5000 student-management-app
-          curl --retry 10 --retry-connrefused --retry-delay 2 --fail http://localhost:8080
-          docker stop student-app
+          for i in {1..15}; do
+            if curl --silent --show-error --fail http://localhost:8080/; then
+              echo "Application is running successfully"
+              docker logs student-app
+              docker stop student-app
+              exit 0
+            fi
+            echo "Waiting for application to start..."
+            sleep 2
+          done
+          docker logs student-app
+          exit 1
